@@ -4,19 +4,19 @@ const cors = require('cors');
 const app = express();
 const mongo = require('mongodb')
 const mongoose = require('mongoose')
-const crypto = require('crypto');
-const { doesNotMatch } = require('assert');
-const { url } = require('inspector');
-const hashIt = crypto.createHash('sha1')
+
 // Basic Configuration
 const port = process.env.PORT || 3000;
-
 app.use(cors());
+
 // inplace of body-parser which has been deprecated
 app.use(express.urlencoded({extended:true}));
 
 // per deprecation warning unified topology was used 
-mongoose.connect(process.env.MONGO_URI, {useNewUrlParser: true, useUnifiedTopology: true})
+mongoose.connect(process.env.MONGO_URI,
+                {useNewUrlParser: true, 
+                 useUnifiedTopology: true}
+                )
 
 // Schema constructed asking mongoose to use $type for interpreting the type of a key instead of the default keyword type
 const UrlShort = new mongoose.Schema({
@@ -26,16 +26,16 @@ const UrlShort = new mongoose.Schema({
 
 // Validation on the input for the URL
 UrlShort.path('original_url')
-.validate((val) => {
-  urlRegex = /(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
-  return urlRegex.test(val);
-}, 'Invalid URL.');
+        .validate((val) => {
+          urlRegex = /(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
+          return urlRegex.test(val);
+        }, 'Invalid URL.');
 
 // as per docs for handling errors 
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'connection error:'))
-db.once('open', ()=>
-console.log('connected to db'))
+// db.once('open', ()=>
+// console.log('connected to db'))
 const Urls = mongoose.model("Urls", UrlShort)
 
 // root html and css set 
@@ -61,25 +61,25 @@ app.post('/api/shorturl/', (req, res)=>{
                     original_url: data.original_url, 
                     short_url: data.short_url
                   })
-              })
-})
+               })
+  })
 
 // using the short url, provide access to the url 
-app.get('/api/shorturl/:shorted', (req, res)=>{
+  app.get('/api/shorturl/:shorted', (req, res)=>{
   // find the document of shorted url and push to the original url 
   // not saved as a variable due to asynch promise pending 
-  const generatedShort = req.params.shorted
-  Urls.find({short_url: generatedShort})
-      .then((data)=>{
-        let urlRedirect = data[0]
-        // console.log(urlRedirect + "<=== here it is")
-        return urlRedirect
-      })
-      .then((obj)=> res.redirect(obj.original_url))
-      .catch((error) => console.log(error))
-})
+    const generatedShort = req.params.shorted
+    Urls.find({short_url: generatedShort})
+        .then(data=> {
+                let foundObj = data[0]
+                let urlRedirect = foundObj.original_url
+                return urlRedirect
+             })
+        .then(obj => res.redirect(obj))
+        .catch(error => console.log(error))
+  })
 
 
  // monitor server
- const PORT = process.env.PORT || 3000;
- app.listen(PORT, () => console.log(`server listening on port ${PORT}`))
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`server listening on port ${PORT}`))
