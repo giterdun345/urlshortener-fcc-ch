@@ -72,10 +72,9 @@ app.post('/api/shorturl/', (req, res)=>{
     Urls.find({short_url: generatedShort})
         .then(data=> {
                 let foundObj = data[0]
-                let urlRedirect = foundObj.original_url
-                return urlRedirect
-             })
-        .then(obj => res.redirect(obj))
+                res.redirect(foundObj.original_url )            
+              })
+        // .then(obj =>)
         .catch(error => console.log(error))
   })
 
